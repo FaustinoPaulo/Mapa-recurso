@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/OceanoAtlntico_1.js"></script>
+        <script src="data/Angola_2.js"></script>
+        <script src="data/ProvinciasdoLitoral_3.js"></script>
+        <script src="data/Recurso_Pelagico_4.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        })
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+            if (bounds_group.getLayers().length) {
+                map.fitBounds(bounds_group.getBounds());
+            }
+            map.setMaxBounds(map.getBounds());
+            map.setMinZoom(map.getZoom());
+        }
+        map.createPane('pane_EsriTopographic_0');
+        map.getPane('pane_EsriTopographic_0').style.zIndex = 400;
+        var layer_EsriTopographic_0 = L.tileLayer('https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+            pane: 'pane_EsriTopographic_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+        });
+        layer_EsriTopographic_0;
+        map.addLayer(layer_EsriTopographic_0);
+        function pop_OceanoAtlntico_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">featurecla</th>\
+                        <td>' + (feature.properties['featurecla'] !== null ? autolinker.link(String(feature.properties['featurecla']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">scalerank</th>\
+                        <td>' + (feature.properties['scalerank'] !== null ? autolinker.link(String(feature.properties['scalerank']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_OceanoAtlntico_1_0() {
+            return {
+                pane: 'pane_OceanoAtlntico_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(166,206,227,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_OceanoAtlntico_1');
+        map.getPane('pane_OceanoAtlntico_1').style.zIndex = 401;
+        map.getPane('pane_OceanoAtlntico_1').style['mix-blend-mode'] = 'normal';
+        var layer_OceanoAtlntico_1 = new L.geoJson(json_OceanoAtlntico_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_OceanoAtlntico_1',
+            layerName: 'layer_OceanoAtlntico_1',
+            pane: 'pane_OceanoAtlntico_1',
+            onEachFeature: pop_OceanoAtlntico_1,
+            style: style_OceanoAtlntico_1_0,
+        });
+        bounds_group.addLayer(layer_OceanoAtlntico_1);
+        map.addLayer(layer_OceanoAtlntico_1);
+        function pop_Angola_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Cod_Alfa_P'] !== null ? autolinker.link(String(feature.properties['Cod_Alfa_P']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Cod_Prov'] !== null ? autolinker.link(String(feature.properties['Cod_Prov']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Cod_Alfa_N'] !== null ? autolinker.link(String(feature.properties['Cod_Alfa_N']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Cod_País'] !== null ? autolinker.link(String(feature.properties['Cod_País']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Nome_Prov'] !== null ? autolinker.link(String(feature.properties['Nome_Prov']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Angola_2_0() {
+            return {
+                pane: 'pane_Angola_2',
+                opacity: 1,
+                color: 'rgba(82,82,82,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(157,157,157,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Angola_2');
+        map.getPane('pane_Angola_2').style.zIndex = 402;
+        map.getPane('pane_Angola_2').style['mix-blend-mode'] = 'normal';
+        var layer_Angola_2 = new L.geoJson(json_Angola_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Angola_2',
+            layerName: 'layer_Angola_2',
+            pane: 'pane_Angola_2',
+            onEachFeature: pop_Angola_2,
+            style: style_Angola_2_0,
+        });
+        bounds_group.addLayer(layer_Angola_2);
+        map.addLayer(layer_Angola_2);
+        function pop_ProvinciasdoLitoral_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Cod_Alfa_P</th>\
+                        <td>' + (feature.properties['Cod_Alfa_P'] !== null ? autolinker.link(String(feature.properties['Cod_Alfa_P']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Cod_Prov</th>\
+                        <td>' + (feature.properties['Cod_Prov'] !== null ? autolinker.link(String(feature.properties['Cod_Prov']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Cod_Alfa_N</th>\
+                        <td>' + (feature.properties['Cod_Alfa_N'] !== null ? autolinker.link(String(feature.properties['Cod_Alfa_N']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Cod_País</th>\
+                        <td>' + (feature.properties['Cod_País'] !== null ? autolinker.link(String(feature.properties['Cod_País']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Nome_Prov</th>\
+                        <td>' + (feature.properties['Nome_Prov'] !== null ? autolinker.link(String(feature.properties['Nome_Prov']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_ProvinciasdoLitoral_3_0(feature) {
+            switch(String(feature.properties['Nome_Prov'])) {
+                case 'Bengo':
+                    return {
+                pane: 'pane_ProvinciasdoLitoral_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(238,105,22,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Benguela':
+                    return {
+                pane: 'pane_ProvinciasdoLitoral_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(226,101,240,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Cabinda':
+                    return {
+                pane: 'pane_ProvinciasdoLitoral_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(18,142,225,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Cuanza Sul':
+                    return {
+                pane: 'pane_ProvinciasdoLitoral_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(218,239,81,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Luanda':
+                    return {
+                pane: 'pane_ProvinciasdoLitoral_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(47,168,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Namibe':
+                    return {
+                pane: 'pane_ProvinciasdoLitoral_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(47,110,158,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Zaire':
+                    return {
+                pane: 'pane_ProvinciasdoLitoral_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,191,111,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_ProvinciasdoLitoral_3');
+        map.getPane('pane_ProvinciasdoLitoral_3').style.zIndex = 403;
+        map.getPane('pane_ProvinciasdoLitoral_3').style['mix-blend-mode'] = 'normal';
+        var layer_ProvinciasdoLitoral_3 = new L.geoJson(json_ProvinciasdoLitoral_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_ProvinciasdoLitoral_3',
+            layerName: 'layer_ProvinciasdoLitoral_3',
+            pane: 'pane_ProvinciasdoLitoral_3',
+            onEachFeature: pop_ProvinciasdoLitoral_3,
+            style: style_ProvinciasdoLitoral_3_0,
+        });
+        bounds_group.addLayer(layer_ProvinciasdoLitoral_3);
+        map.addLayer(layer_ProvinciasdoLitoral_3);
+        function pop_Recurso_Pelagico_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Date'] !== null ? autolinker.link(String(feature.properties['Date']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['scientific'] !== null ? autolinker.link(String(feature.properties['scientific']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Family'] !== null ? autolinker.link(String(feature.properties['Family']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['catchweigh'] !== null ? autolinker.link(String(feature.properties['catchweigh']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['catchcount'] !== null ? autolinker.link(String(feature.properties['catchcount']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lengthsamp'] !== null ? autolinker.link(String(feature.properties['lengthsamp']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lat'] !== null ? autolinker.link(String(feature.properties['lat']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['long'] !== null ? autolinker.link(String(feature.properties['long']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Depth_inte'] !== null ? autolinker.link(String(feature.properties['Depth_inte']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Region'] !== null ? autolinker.link(String(feature.properties['Region']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Gear'] !== null ? autolinker.link(String(feature.properties['Gear']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Recurso_Pelagico_4_0() {
+            return {
+                pane: 'pane_Recurso_Pelagico_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(237,129,206,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Recurso_Pelagico_4');
+        map.getPane('pane_Recurso_Pelagico_4').style.zIndex = 404;
+        map.getPane('pane_Recurso_Pelagico_4').style['mix-blend-mode'] = 'normal';
+        var layer_Recurso_Pelagico_4 = new L.geoJson(json_Recurso_Pelagico_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Recurso_Pelagico_4',
+            layerName: 'layer_Recurso_Pelagico_4',
+            pane: 'pane_Recurso_Pelagico_4',
+            onEachFeature: pop_Recurso_Pelagico_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Recurso_Pelagico_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Recurso_Pelagico_4);
+        map.addLayer(layer_Recurso_Pelagico_4);
+        var overlaysTree = [
+            {label: '<img src="legend/Recurso_Pelagico_4.png" /> Recurso_Pelagico', layer: layer_Recurso_Pelagico_4},
+            {label: 'Provincias do Litoral<br /><table><tr><td style="text-align: center;"><img src="legend/ProvinciasdoLitoral_3_Bengo0.png" /></td><td>Bengo</td></tr><tr><td style="text-align: center;"><img src="legend/ProvinciasdoLitoral_3_Benguela1.png" /></td><td>Benguela</td></tr><tr><td style="text-align: center;"><img src="legend/ProvinciasdoLitoral_3_Cabinda2.png" /></td><td>Cabinda</td></tr><tr><td style="text-align: center;"><img src="legend/ProvinciasdoLitoral_3_CuanzaSul3.png" /></td><td>Cuanza Sul</td></tr><tr><td style="text-align: center;"><img src="legend/ProvinciasdoLitoral_3_Luanda4.png" /></td><td>Luanda</td></tr><tr><td style="text-align: center;"><img src="legend/ProvinciasdoLitoral_3_Namibe5.png" /></td><td>Namibe</td></tr><tr><td style="text-align: center;"><img src="legend/ProvinciasdoLitoral_3_Zaire6.png" /></td><td>Zaire</td></tr></table>', layer: layer_ProvinciasdoLitoral_3},
+            {label: '<img src="legend/Angola_2.png" /> Angola', layer: layer_Angola_2},
+            {label: '<img src="legend/OceanoAtlntico_1.png" /> Oceano Atlântico', layer: layer_OceanoAtlntico_1},
+            {label: "Esri Topographic", layer: layer_EsriTopographic_0, radioGroup: 'bm' },]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+		document.addEventListener("DOMContentLoaded", function() {
+            // set new Layers List height which considers toggle icon
+            function newLayersListHeight() {
+                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
+                if (layerScrollbarElement) {
+                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
+                    var originalHeight = layersListElement.style.height 
+                        || window.getComputedStyle(layersListElement).height;
+                    var newHeight = parseFloat(originalHeight) - 50;
+                    layersListElement.style.height = newHeight + 'px';
+                }
+            }
+            var isLayersListExpanded = true;
+            var controlLayersElement = document.querySelector('.leaflet-control-layers');
+            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
+            // toggle Collapsed/Expanded and apply new Layers List height
+            toggleLayerControl.addEventListener('click', function() {
+                if (isLayersListExpanded) {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                } else {
+                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+                }
+                isLayersListExpanded = !isLayersListExpanded;
+                newLayersListHeight()
+            });	
+			// apply new Layers List height if toggle layerstree
+			if (controlLayersElement) {
+				controlLayersElement.addEventListener('click', function(event) {
+					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
+					if (toggleLayerHeaderPointer) {
+						newLayersListHeight();
+					}
+				});
+			}
+            // Collapsed/Expanded at Start to apply new height
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            // Collapsed touch/small screen
+            var isSmallScreen = window.innerWidth < 650;
+            if (isSmallScreen) {
+                setTimeout(function() {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                    isLayersListExpanded = !isLayersListExpanded;
+                }, 500);
+            }  
+        });       
+        setBounds();
+        var i = 0;
+        layer_ProvinciasdoLitoral_3.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Nome_Prov'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Times New Roman\', sans-serif;">' + layer.feature.properties['Nome_Prov']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_ProvinciasdoLitoral_3'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        map.addControl(new L.Control.Search({
+            layer: layer_Recurso_Pelagico_4,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'scientific'}));
+        if (typeof url === 'undefined') {
+            document.getElementsByClassName('search-button')[0].className += ' fa fa-binoculars';
+        } else {
+            document.getElementsByClassName('search-button')[1].className += ' fa fa-binoculars';
+        }
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"scientific": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+        var i = 0;
+        layer_ProvinciasdoLitoral_3.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Nome_Prov'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Times New Roman\', sans-serif;">' + layer.feature.properties['Nome_Prov']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_ProvinciasdoLitoral_3'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_scientific = document.createElement('div');
+            div_scientific.id = "div_scientific";
+            div_scientific.className= "filterselect";
+            document.getElementById("menu").appendChild(div_scientific);
+            sel_scientific = document.createElement('select');
+            sel_scientific.multiple = true;
+            sel_scientific.size = 7;
+            sel_scientific.id = "sel_scientific";
+            var scientific_options_str = "<option value='' unselected></option>";
+            sel_scientific.onchange = function(){filterFunc()};
+            scientific_options_str  += '<option value="Engraulis encrasicolus">Engraulis encrasicolus</option>';
+            scientific_options_str  += '<option value="Etrumeus whiteheadi">Etrumeus whiteheadi</option>';
+            scientific_options_str  += '<option value="Sardinella aurita">Sardinella aurita</option>';
+            scientific_options_str  += '<option value="Sardinella maderensis">Sardinella maderensis</option>';
+            scientific_options_str  += '<option value="Scomber colias">Scomber colias</option>';
+            scientific_options_str  += '<option value="Trachurus capensis">Trachurus capensis</option>';
+            scientific_options_str  += '<option value="Trachurus trecae">Trachurus trecae</option>';
+            sel_scientific.innerHTML = scientific_options_str;
+            div_scientific.appendChild(sel_scientific);
+            var lab_scientific = document.createElement('div');
+            lab_scientific.innerHTML = 'scientific';
+            lab_scientific.className = 'filterlabel';
+            div_scientific.appendChild(lab_scientific);
+            var reset_scientific = document.createElement('div');
+            reset_scientific.innerHTML = 'clear filter';
+            reset_scientific.className = 'filterlabel';
+            reset_scientific.onclick = function() {
+                var options = document.getElementById("sel_scientific").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_scientific.appendChild(reset_scientific);
+        resetLabels([layer_OceanoAtlntico_1,layer_ProvinciasdoLitoral_3]);
+        map.on("zoomend", function(){
+            resetLabels([layer_OceanoAtlntico_1,layer_ProvinciasdoLitoral_3]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_OceanoAtlntico_1,layer_ProvinciasdoLitoral_3]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_OceanoAtlntico_1,layer_ProvinciasdoLitoral_3]);
+        });
+        </script>
+    </body>
+</html>
